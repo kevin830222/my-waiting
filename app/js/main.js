@@ -42,11 +42,12 @@ var googleKey = 'AIzaSyDAGg0K_pKJzgVU6Z1J18unImf05zu43uE';
 var data = {};
 
 function reportDetail(rep) {
-	var output = rep.address;
+	var output = rep.address + '<br>' + rep.plate + '<br>' + rep.count;
 	return output;
 }
 
-function showReport(rep) {
+function showReport(id) {
+	var rep = data[id];
 	L.marker(rep.latlng, custom_icon[1])
 		.addTo(map_container)
 		.bindPopup(reportDetail(rep));
@@ -71,6 +72,20 @@ function showReport(rep) {
 			})
 		)
 	);
+	$('i.left').click(function() {
+		var id = $(this).parents('li').attr('id');
+		data[id].pic_index = (data[id].pic_index + data[id].pics.length + 1) % data[id].pics.length;
+		$(this).parent().find('img').attr({
+			'src': data[id].pics[data[id].pic_index]._url
+		});
+	});
+	$('i.right').click(function() {
+		var id = $(this).parents('li').attr('id');
+		data[id].pic_index = (data[id].pic_index + data[id].pics.length - 1) % data[id].pics.length;
+		$(this).parent().find('img').attr({
+			'src': data[id].pics[data[id].pic_index]._url
+		});
+	});
 }
 
 
@@ -84,19 +99,17 @@ Parse.initialize('zsM7jMlv5rSBynZReBXIvUWNgwx0hmpqXrHodpO7', 'gvjbH0CIqIUxfqj5sF
 var Report = Parse.Object.extend('Report');
 var query = new Parse.Query(Report);
 
-function getAddress(location, id) {
-	$.ajax({
-		url: 'https://maps.googleapis.com/maps/api/geocode/json',
-		data: {
-			latlng: location._latitude + ',' + location._longitude,
-			key: googleKey,
-			language: 'zh-TW'
+function getCount(id) {
+	query.equalTo('LicensePlate', data[id].plate);
+	query.count({
+		success: function(count) {
+			console.log(count);
+			data[id].count = count;
+			showReport(id);
 		},
-	}).done(function(response) {
-		data[id].address = response.results[0].formatted_address;
-		showReport(data[id]);
-	}).fail(function(xhr) {
-		console.log(xhr);
+		error: function(error) {
+			console.log("Error: " + error.code + " " + error.message);
+		}
 	});
 }
 
@@ -110,17 +123,22 @@ query.find({
 				data[id] = {
 					id: id,
 					latlng: [location._latitude, location._longitude],
+					lp: res[i].get('LicensePlatePicture')._url,
+					plate: res[i].get('LicensePlate'),
 					pics: res[i].get('Pictures'),
-					lp: res[i].get('LicensePlatePicture')._url
+					pic_index: 0,
+					address: res[i].get('Address')
 				};
 
-				getAddress(location, id);
+				// showReport(data[id]);
+				// getAddress(location, id);
+				getCount(id);
 			}
 		}
 		getLocation();
 	},
 	error: function(error) {
-		alert("Error: " + error.code + " " + error.message);
+		console.log("Error: " + error.code + " " + error.message);
 	}
 });
 
