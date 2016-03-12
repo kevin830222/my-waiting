@@ -31,53 +31,47 @@ var mapbox_light = L.tileLayer(URL, {
 
 var map_container = L.map('leaflet-map', {
 	center: [25.0333, 121.6333],
-	zoom: 13,
+	zoom: 10,
 	layers: [mapbox_light]
 });
 
-function getLocation() {
-	if (navigator.geolocation) {
-		navigator.geolocation.watchPosition(showPosition);
-	}
+
+
+var googleKey = 'AIzaSyDAGg0K_pKJzgVU6Z1J18unImf05zu43uE';
+
+var data = {};
+
+function reportDetail(rep) {
+	var output = rep.address;
+	return output;
 }
 
-var googleKey = 'AIzaSyAzph6fbD28zqwrk8AF9F-xx10qKZfn52s';
-function showPosition(position) {
-	currentLocation = position.coords;
-	map_container.setView([position.coords.latitude, position.coords.longitude], 15);
-	$('#menu-list > li').each(function(index, elem) {
-		var latlng = JSON.parse($(this).find('a').attr('data-latlng'));
-		var _self = this;
-		$.ajax({
-				url: 'https://maps.googleapis.com/maps/api/distancematrix/json',
-				data: {
-					origins: position.coords.latitude + ',' + position.coords.longitude,
-					destinations: latlng[0] + ',' + latlng[1],
-					key: googleKey,
-				},
-			})
-			.done(function(response) {
-				console.log(response);
-				var distance = 'Cannot detect';
-				if (response.status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-				    distance = response.rows[0].elements[0].distance.text;
-				}
-				console.log(distance);
-				$(_self).find('.text').html(distance);
-			})
-			.fail(function() {
-				console.log("error");
-			})
-			.always(function() {
-				console.log("complete");
-			});
-		
-	});
-}
+function showReport(rep) {
+	L.marker(rep.latlng, custom_icon[1])
+		.addTo(map_container)
+		.bindPopup(reportDetail(rep));
 
-/*==================================
-=            Google map            =
-==================================*/
+	$('#menu-list').prepend(
+		$('<li>').attr({
+			id: rep.id
+		}).append(
+			$('<a href="#">').addClass('hvr-sweep-to-right').append(
+				$('<div>').addClass('img-container').append(
+					$('<img>').addClass('img-responsive').attr({
+						'src': rep.pics[0]._url
+					}),
+					$('<i>').addClass('fa fa-arrow-left left'),
+					$('<i>').addClass('fa fa-arrow-right right')
+				),
+				$('<div>').addClass('text')
+			).click(function() {
+				var id = $(this).parent().attr('id');
+				var latlng = data[id].latlng;
+				map_container.setView(latlng, 16);
+			})
+		)
+	);
+}
 
 
 
@@ -85,81 +79,45 @@ function showPosition(position) {
 =            Parse            =
 =============================*/
 
-Parse.initialize("zsM7jMlv5rSBynZReBXIvUWNgwx0hmpqXrHodpO7", "gvjbH0CIqIUxfqj5sFjHthTwIhQ8FN4lNlKCVsh1");
+Parse.initialize('zsM7jMlv5rSBynZReBXIvUWNgwx0hmpqXrHodpO7', 'gvjbH0CIqIUxfqj5sFjHthTwIhQ8FN4lNlKCVsh1');
 
-function reportDetail(report) {
-	var picture = report.get("licensePlatePicture");
-	var location = report.get('Location');
+var Report = Parse.Object.extend('Report');
+var query = new Parse.Query(Report);
+
+function getAddress(location, id) {
 	$.ajax({
 		url: 'https://maps.googleapis.com/maps/api/geocode/json',
 		data: {
 			latlng: location._latitude + ',' + location._longitude,
 			key: googleKey,
+			language: 'zh-TW'
 		},
-	})
-	.done(function(response) {
-		console.log(response);
-	})
-	.fail(function() {
-		console.log("error");
-	})
-	.always(function() {
-		console.log("complete");
+	}).done(function(response) {
+		data[id].address = response.results[0].formatted_address;
+		showReport(data[id]);
+	}).fail(function(xhr) {
+		console.log(xhr);
 	});
-	
-	if (picture._url) {
-		return '<img src="' + picture._url + '">';
-	}
-	return 'No picture';
 }
 
-function showReport(report) {
-	var location = report.get("Location");
-	var picture = report.get("licensePlatePicture");
-	L.marker([location._latitude, location._longitude], custom_icon)
-		.addTo(map_container)
-		.bindPopup(reportDetail(report));
-
-	// draw menu
-	var item = $('#' + report.id);
-	if (item.length == 0) {
-		$('#menu-list').prepend(
-			$('<li>').append(
-				$('<a href="#" class="hvr-sweep-to-right">').attr({
-					'data-latlng': '[' + location._latitude + ',' + location._longitude + ']'
-				})
-				.append(
-					$('<div class="img-container">').append(
-						$('<img alt="" class="img-responsive">')
-						.attr({
-							'src': picture._url,
-							'height': 400,
-							'width': 300,
-						})
-
-					),
-					$('<div class="text">')
-				)
-				.click(function(evt) {
-					var latlng = JSON.parse($(this).attr('data-latlng'));
-					map_container.setView(latlng, 15);
-				})
-			).attr('id', report.id)
-		);
-	};
-
-}
-
-var Report = Parse.Object.extend("Report");
-var query = new Parse.Query(Report);
-// query.equalTo("playerName", "Dan Stemkoski");
 query.find({
-	success: function(results) {
-		// Do something with the returned Parse.Object values
-		for (var i = 0; i < results.length; i++) {
-			var report = results[i];
-			showReport(report);
+	success: function(res) {
+		for (var i in res) {
+			var id = res[i].id;
+			if (!data[id]) {
+				var location = res[i].get('Location');
+
+				data[id] = {
+					id: id,
+					latlng: [location._latitude, location._longitude],
+					pics: res[i].get('Pictures'),
+					lp: res[i].get('LicensePlatePicture')._url
+				};
+
+				getAddress(location, id);
+			}
 		}
+		getLocation();
 	},
 	error: function(error) {
 		alert("Error: " + error.code + " " + error.message);
@@ -167,26 +125,40 @@ query.find({
 });
 
 
-/*===========================
-=            Run            =
-===========================*/
 
-$(function() {
-	getLocation();
-});
+/*============================================
+=            Get Current Location            =
+============================================*/
 
+function getDistance(center, id) {
+	$.ajax({
+		url: 'https://maps.googleapis.com/maps/api/distancematrix/json',
+		data: {
+			origins: center,
+			destinations: data[id].latlng[0] + ',' + data[id].latlng[1],
+			key: googleKey,
+		}
+	}).done(function(res) {
+		if (res.status === 'OK' && res.rows[0].elements[0].status === 'OK') {
+			data[id].distance = res.rows[0].elements[0].distance.text;
+		}
+		else {
+			data[id].distance = 'Cannot detect';
+			console.log(res.error_message);
+		}
+		$('#' + data[id].id + ' .text').text(data[id].distance);
+	}).fail(function(xhr) {
+		console.log(xhr);
+	});
+}
 
-
-// {
-// 	img: '1.jpg',
-// 	latlng: [25.040245109051735, 121.53897903467575]
-// }, {
-// 	img: '2.jpg'
-// 	latlng: [25.0596784, 121.5567165]
-// }, {
-// 	img: '3.jpg',
-// 	latlng: [25.0559851, 121.5315252]
-// }, {
-// 	img: '4.jpg',
-// 	latlng: [25.0559851, 121.5315252]
-// }
+function getLocation() {
+	navigator.geolocation.getCurrentPosition(function(position) {
+		map_container.setView([position.coords.latitude, position.coords.longitude], 16);
+		var center = position.coords.latitude + ',' + position.coords.longitude;
+		for (var i in data) {
+			// var data[i] = data[i];
+			getDistance(center, i);
+		}
+	});
+}

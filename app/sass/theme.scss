@@ -46,7 +46,10 @@ p {
 	top: 0;
 	left: 0;
 	bottom: 0;
-	background: white;
+	padding: 10px 10px 0 10px;
+	width: 300px;
+	box-sizing: border-box;
+	background: #333;
 	overflow: auto;
 }
 
@@ -56,30 +59,51 @@ p {
 		z-index: 999;
 		margin: 0;
 		padding: 0;
-		border-right: 8px solid #1B242F;
 		li {
 			position: relative;
 			display: block;
-			margin: 0;
+			margin: 0 0 10px;
 			background: #fff;
+			border-radius: 4px;
 			a {
 				display: block;
+				overflow: hidden;
 				padding: 0;
 				font-size: 1em;
 				color: #34495E;
 				text-decoration: none;
 				font-weight: 600;
-				// border-bottom: 8px solid #3598db;
-				// transition: background-color .2s linear;
-				.img-container {
-					height: 450px;
-					width: 300px;
+				border-radius: 4px;
+				.img-container img {
+					min-height: 280px;
+					height: auto;
+					width: 280px;
+				}
+				i {
+					position: absolute;
+					top: 200px;
+					font-size: 2rem;
+					color: white;
+					background: #FFB74D;
+					padding: 10px;
+					border-radius: 100px;
+					opacity: 0;
+					transition: opacity .1s linear;
+				}
+				&.hvr-sweep-to-right:hover i {
+					opacity: 1;
+				}
+				i.left {
+					left: 0;
+				}
+				i.right {
+					right: 0;
 				}
 				.text {
 					box-sizing: border-box;
 					padding: 1em 0 .5em;
 					text-align: center;
-					border-bottom: .5em solid #1bbc9b;
+					border-bottom: .5em solid #FFB74D;
 				}
 				span {
 					color: #fff;
@@ -92,7 +116,6 @@ p {
 			}
 			a:hover {
 				color: #eee;
-				// background-color: #1bbc9b;
 				span {
 					background-color: #1bbc9b;
 					color: #fff;
@@ -106,7 +129,6 @@ p {
 	}
 }
 
-
 a.hvr-sweep-to-right {
 	display: inline-block;
 	vertical-align: middle;
@@ -119,8 +141,8 @@ a.hvr-sweep-to-right {
 	position: relative;
 	-webkit-transition-property: color;
 	transition-property: color;
-	-webkit-transition-duration: 0.3s;
-	transition-duration: 0.3s;
+	-webkit-transition-duration: 0.1s;
+	transition-duration: 0.1s;
 	color: #fff;
 	border-radius: 0.3em;
 	-o-border-radius: 0.3em;
@@ -136,15 +158,15 @@ a.hvr-sweep-to-right:before {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: #1bbc9b;
+	background: #FFB74D;
 	-webkit-transform: scaleX(0);
 	transform: scaleX(0);
 	-webkit-transform-origin: 0 50%;
 	transform-origin: 0 50%;
 	-webkit-transition-property: transform;
 	transition-property: transform;
-	-webkit-transition-duration: 0.3s;
-	transition-duration: 0.3s;
+	-webkit-transition-duration: 0.1s;
+	transition-duration: 0.1s;
 	-webkit-transition-timing-function: ease-out;
 	transition-timing-function: ease-out;
 	border-radius: 0.3em;
