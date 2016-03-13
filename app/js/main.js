@@ -46,7 +46,7 @@ function reportDetail(id) {
 	var output = '<h3>' + 'Plate: ' + data[id].plate + '<br>';
 	output += '<br>' + 'Address:<br>' + data[id].address + '<br>';
 	output += '<br>' + 'Times: ' + count[data[id].plate] + '<br><br></h3>';
-	output += '<button class="btn btn-block btn-danger" onclick="data[\'' + id + '\']._self.set(\'State\', \'Accepted\');data[\'' + id + '\']._self.save();window.location.href=\'.\';">Accept</button>';
+	output += '<button class="btn btn-block btn-danger" onclick="data[\'' + id + '\']._self.set(\'State\', \'Accepted\');data[\'' + id + '\']._self.save(); setTimeout(function() {window.location.href=\'index.html\';}, 1000);">Accept</button>';
 	return output;
 }
 
