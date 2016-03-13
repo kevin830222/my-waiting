@@ -116,44 +116,51 @@ function showReport(id) {
 
 Parse.initialize('zsM7jMlv5rSBynZReBXIvUWNgwx0hmpqXrHodpO7', 'gvjbH0CIqIUxfqj5sFjHthTwIhQ8FN4lNlKCVsh1');
 
-
 var Report = Parse.Object.extend('Report');
 var query = new Parse.Query(Report);
 
 query.equalTo('State', 'Pending');
-query.find({
-	success: function(res) {
-		// console.log(JSON.stringify(res));
-		for (var i in res) {
-			var id = res[i].id;
-			if (!data[id]) {
-				var location = res[i].get('Location');
 
-				data[id] = {
-					_self: res[i],
-					id: id,
-					latlng: [location._latitude, location._longitude],
-					lp: res[i].get('LicensePlatePicture')._url,
-					plate: res[i].get('LicensePlate'),
-					pics: res[i].get('Pictures'),
-					pic_index: 0,
-					address: res[i].get('Address')
-				};
+function getData() {
+	query.find({
+		success: function(res) {
+			var flag = false;
+			for (var i in res) {
+				var id = res[i].id;
+				if (!data[id]) {
+					flag = true;
+					var location = res[i].get('Location');
 
-				console.log(data[id].plate);
+					data[id] = {
+						_self: res[i],
+						id: id,
+						latlng: [location._latitude, location._longitude],
+						lp: res[i].get('LicensePlatePicture')._url,
+						plate: res[i].get('LicensePlate'),
+						pics: res[i].get('Pictures'),
+						pic_index: 0,
+						address: res[i].get('Address')
+					};
 
-				if (count[data[id].plate]) count[data[id].plate]++;
-				else count[data[id].plate] = 1;
-				showReport(id);
+					if (count[data[id].plate]) count[data[id].plate]++;
+					else count[data[id].plate] = 1;
+					showReport(id);
+				}
 			}
+			if (flag) {
+				getLocation();
+			}
+		},
+		error: function(error) {
+			console.log("Error: " + error.code + " " + error.message);
 		}
-		getLocation();
-	},
-	error: function(error) {
-		console.log("Error: " + error.code + " " + error.message);
-	}
-});
+	});
+}
 
+getData();
+setInterval(function() {
+	getData();
+}, 5000);
 
 
 /*============================================
@@ -188,8 +195,7 @@ function getLocation() {
 		map_container.setView([position.coords.latitude, position.coords.longitude], 16);
 		var center = position.coords.latitude + ',' + position.coords.longitude;
 		for (var i in data) {
-			// var data[i] = data[i];
-			getDistance(center, i);
+			if (!data[i].distance) getDistance(center, i);
 		}
 	});
 }
