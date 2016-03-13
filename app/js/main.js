@@ -6,7 +6,7 @@ const ACCESS_TOKEN = 'pk.eyJ1IjoiamFja3loc3UiLCJhIjoiY2lpdmprMjh5MDAzOXUza21zazg
 const ATTR = 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>';
 var URL = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=' + ACCESS_TOKEN;
 
-// var marker_color = ['#9a9a9a', '#2cd8b6', '#ef7203', '#a15af8', '#e11b0c', '#ff6b93', '#30c9ef', '#ebbd5b', '#1bb05d', '#54d62c', '#0f7ce2'];
+
 
 var custom_icon = (function() {
 	var LeafIcon = L.Icon.extend({
@@ -42,11 +42,19 @@ var googleKey = 'AIzaSyDAGg0K_pKJzgVU6Z1J18unImf05zu43uE';
 var data = {};
 var count = {};
 
+function handleClick(id) {
+	data[id]._self.set('State', 'Accepted');
+	data[id]._self.save();
+	setTimeout(function() {
+		window.location.href = 'index.html';
+	}, 500);
+}
+
 function reportDetail(id) {
 	var output = '<h3>' + 'Plate: ' + data[id].plate + '<br>';
 	output += '<br>' + 'Address:<br>' + data[id].address + '<br>';
 	output += '<br>' + 'Times: ' + count[data[id].plate] + '<br><br></h3>';
-	output += '<button class="btn btn-block btn-danger" onclick="data[\'' + id + '\']._self.set(\'State\', \'Accepted\');data[\'' + id + '\']._self.save(); setTimeout(function() {window.location.href=\'index.html\';}, 1000);">Accept</button>';
+	output += '<button class="btn btn-block btn-danger" onclick="handleClick(\'' + id + '\')">Accept</button>';
 	return output;
 }
 
@@ -57,7 +65,7 @@ function showReport(id) {
 	if (marker_index < 0) marker_index = 0;
 	else if (marker_index > 3) marker_index = 3;
 
-	L.marker(rep.latlng, {
+	var marker = L.marker(rep.latlng, {
 			icon: custom_icon[marker_index]
 		})
 		.addTo(map_container)
@@ -80,6 +88,7 @@ function showReport(id) {
 				var id = $(this).parent().attr('id');
 				var latlng = data[id].latlng;
 				map_container.setView(latlng, 16);
+				marker.openPopup();
 			})
 		)
 	);
